@@ -12,41 +12,49 @@ export async function POST(request) {
       );
     }
 
-    if (!process.env.FAL_KEY) {
+    const falKey = process.env.FAL_KEY;
+
+    if (!falKey) {
       return NextResponse.json(
-        { error: "FAL_KEY is missing from Vercel." },
+        {
+          error:
+            "FAL_KEY is missing. Add FAL_KEY to Vercel Environment Variables."
+        },
         { status: 500 }
       );
     }
 
     fal.config({
-      credentials: process.env.FAL_KEY,
+      credentials: falKey
     });
 
     const result = await fal.subscribe(
       "fal-ai/minimax/video-01-live",
       {
         input: {
-          prompt: prompt.trim(),
+          prompt: prompt.trim()
         },
-        logs: true,
+        logs: true
       }
     );
 
     const videoUrl = result?.data?.video?.url;
 
     if (!videoUrl) {
+      console.error("fal.ai response:", result);
+
       return NextResponse.json(
         {
           error:
-            "fal.ai finished, but no video URL was returned.",
+            "fal.ai did not return a video URL. Check the Vercel logs for details."
         },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      videoUrl,
+      success: true,
+      videoUrl: videoUrl
     });
   } catch (error) {
     console.error("FAL VIDEO ERROR:", error);
@@ -55,7 +63,7 @@ export async function POST(request) {
       {
         error:
           error?.message ||
-          "Video generation failed.",
+          "Video generation failed. Check your FAL_KEY and fal.ai access."
       },
       { status: 500 }
     );
