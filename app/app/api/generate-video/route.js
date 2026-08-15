@@ -7,14 +7,14 @@ export async function POST(request) {
 
     if (!prompt) {
       return NextResponse.json(
-        { error: "No prompt was provided." },
+        { error: "Movie prompt is required." },
         { status: 400 }
       );
     }
 
     if (!process.env.FAL_KEY) {
       return NextResponse.json(
-        { error: "FAL_KEY is missing from Vercel Environment Variables." },
+        { error: "FAL_KEY is missing from Vercel." },
         { status: 500 }
       );
     }
@@ -23,16 +23,35 @@ export async function POST(request) {
       credentials: process.env.FAL_KEY,
     });
 
+    const result = await fal.subscribe("fal-ai/minimax/video-01-live", {
+      input: {
+        prompt: prompt,
+      },
+      logs: true,
+    });
+
+    const videoUrl = result?.data?.video?.url;
+
+    if (!videoUrl) {
+      return NextResponse.json(
+        {
+          error: "fal.ai completed the request but did not return a video URL.",
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
-      message: "FAL_KEY is connected successfully!",
-      prompt,
+      videoUrl,
     });
   } catch (error) {
-    console.error("API ERROR:", error);
+    console.error("FAL VIDEO ERROR:", error);
 
     return NextResponse.json(
       {
-        error: error?.message || "Unknown server error",
+        error:
+          error?.message ||
+          "fal.ai video generation failed.",
       },
       { status: 500 }
     );
