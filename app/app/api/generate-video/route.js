@@ -7,8 +7,15 @@ export async function POST(request) {
 
     if (!prompt) {
       return NextResponse.json(
-        { error: "Please enter a movie prompt." },
+        { error: "No prompt was provided." },
         { status: 400 }
+      );
+    }
+
+    if (!process.env.FAL_KEY) {
+      return NextResponse.json(
+        { error: "FAL_KEY is missing from Vercel Environment Variables." },
+        { status: 500 }
       );
     }
 
@@ -16,29 +23,17 @@ export async function POST(request) {
       credentials: process.env.FAL_KEY,
     });
 
-    const result = await fal.subscribe("fal-ai/fast-svd", {
-      input: {
-        image_url:
-          "https://storage.googleapis.com/falserverless/model_tests/svd/rocket.png"
-      },
-      logs: true,
+    return NextResponse.json({
+      message: "FAL_KEY is connected successfully!",
+      prompt,
     });
-
-    const videoUrl = result?.data?.video?.url;
-
-    if (!videoUrl) {
-      return NextResponse.json(
-        { error: "fal.ai did not return a video." },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ videoUrl });
   } catch (error) {
-    console.error(error);
+    console.error("API ERROR:", error);
 
     return NextResponse.json(
-      { error: "Video generation failed." },
+      {
+        error: error?.message || "Unknown server error",
+      },
       { status: 500 }
     );
   }
