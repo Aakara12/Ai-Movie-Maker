@@ -19,7 +19,7 @@ export default function Home() {
     setMessage("Connecting to the AI video generator...");
 
     try {
-      const response = await fetch("/api/generate-video", {
+      const response = await fetch("/app/api/generate-video", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
