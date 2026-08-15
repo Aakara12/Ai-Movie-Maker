@@ -5,27 +5,24 @@ export async function POST(request) {
   try {
     const { prompt } = await request.json();
 
-    if (!prompt || !prompt.trim()) {
+    if (!prompt?.trim()) {
       return NextResponse.json(
-        { error: "Movie prompt is required." },
+        { error: "Prompt is required." },
         { status: 400 }
       );
     }
 
-    const falKey = process.env.FAL_KEY;
+    const key = process.env.FAL_KEY;
 
-    if (!falKey) {
+    if (!key) {
       return NextResponse.json(
-        {
-          error:
-            "FAL_KEY is missing. Add FAL_KEY to Vercel Environment Variables."
-        },
+        { error: "FAL_KEY is missing." },
         { status: 500 }
       );
     }
 
     fal.config({
-      credentials: falKey
+      credentials: key
     });
 
     const result = await fal.subscribe(
@@ -33,37 +30,22 @@ export async function POST(request) {
       {
         input: {
           prompt: prompt.trim()
-        },
-        logs: true
+        }
       }
     );
 
-    const videoUrl = result?.data?.video?.url;
-
-    if (!videoUrl) {
-      console.error("fal.ai response:", result);
-
-      return NextResponse.json(
-        {
-          error:
-            "fal.ai did not return a video URL. Check the Vercel logs for details."
-        },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json({
       success: true,
-      videoUrl: videoUrl
+      result
     });
+
   } catch (error) {
-    console.error("FAL VIDEO ERROR:", error);
+    console.error("FAL ERROR:", error);
 
     return NextResponse.json(
       {
-        error:
-          error?.message ||
-          "Video generation failed. Check your FAL_KEY and fal.ai access."
+        error: error?.message || "fal.ai request failed",
+        status: error?.status || error?.statusCode || null
       },
       { status: 500 }
     );
